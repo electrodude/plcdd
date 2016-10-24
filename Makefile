@@ -8,21 +8,24 @@ RANLIB=ranlib
 CFLAGS+=-g -O0
 #CFLAGS+=-O3
 
-SOURCES=plcdd.c plcdd_window.c plcdd_display.c plcdd_cmd.c
-OBJECTS=$(patsubst %.c,%.o,${SOURCES})
+SOURCES_LIB=plcdd_window.c plcdd_display.c plcdd_cmd.c
+OBJECTS_LIB=$(patsubst %.c,%.o,${SOURCES_LIB})
+
+SOURCES_PLCDD=plcdd.c
+OBJECTS_PLCDD=$(patsubst %.c,%.o,${SOURCES_PLCDD})
 
 all:		plcdd
 
 clean:
-		rm -vf depends.inc ${OBJECTS} plcdd
+		rm -vf depends.inc ${OBJECTS_LIB} ${OBJECTS_PLCDD} plcdd
 
-plcdd:		${OBJECTS}
+plcdd:		${OBJECTS_LIB} ${OBJECTS_PLCDD}
 		${LD} $^ ${LDFLAGS} -o $@
 
 %.o:		%.c
 		${CC} ${CFLAGS} -c $< -o $@
 
-depends.inc:	${SOURCES}
+depends.inc:	${SOURCES_LIB} ${SOURCES_PLCDD}
 		${CC} ${CFLAGS} -MM $^ > $@
 
 .PHONY:		all clean depends.inc
