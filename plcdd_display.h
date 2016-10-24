@@ -42,4 +42,7 @@ int plcdd_display_update_status(struct plcdd_display *display);
 
 void plcdd_display_update(struct plcdd_display *display);
 
+void plcdd_display_customchar_define(struct plcdd_display *display, unsigned int i, char def[8]);
+void plcdd_customchar_from_asciiart(char *def, const char *p);
+
 #endif

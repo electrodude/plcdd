@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #include "plcdd_cmd.h"
 
@@ -182,4 +183,36 @@ void plcdd_display_update(struct plcdd_display *display)
 
 	plcdd_display_update_backlight(display);
 	plcdd_display_update_status(display);
+}
+
+void plcdd_display_customchar_define(struct plcdd_display *display, unsigned int i, char def[8])
+{
+	plcdd_customchar_define(display->fd, i, def);
+}
+
+void plcdd_customchar_from_asciiart(char *def, const char *p)
+{
+	char *def_end = &def[8];
+	for (; *p && def != def_end; p++)
+	{
+		if (*p == '\n')
+		{
+			def++;
+			*def = 0;
+		}
+		else if (isspace(*p))
+		{
+			*def = (*def << 1) | 0;
+		}
+		else
+		{
+			*def = (*def << 1) | 1;
+		}
+	}
+
+	while (def != def_end)
+	{
+		def++;
+		*def = 0;
+	}
 }

@@ -40,11 +40,24 @@ void backlight_timeout(int seconds)
 	}
 }
 
+static const char *degree_ascii =
+" ##  \n"
+"#  # \n"
+"#  # \n"
+" ##  \n"
+"     \n"
+"     \n"
+"     \n";
+
 int main(int argc, char **argv)
 {
 	struct plcdd_display display;
 	plcdd_display_open(&display, "/dev/ttyAMA0", 9600, 4, 20);
 	display.status_next = PLCDD_STATUS_ON;
+
+	char degree_def[8];
+	plcdd_customchar_from_asciiart(degree_def, degree_ascii);
+	plcdd_display_customchar_define(&display, 7, degree_def);
 
 	struct plcdd_window window_time;
 	plcdd_window_new(&window_time, &display, 3, 12,  8);
