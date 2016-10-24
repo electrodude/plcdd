@@ -51,7 +51,7 @@ size_t plcdd_mvstr(int fd, unsigned char pos, unsigned int len, const char *str)
 	printf("debug: at (%d, %d) %d chars: '%s'\n", PLCDD_POS_TO_Y_X(pos), len, &buf[1]);
 #endif
 
-	size_t n_bytes = p - buf;
+	ssize_t n_bytes = p - buf;
 
 	ssize_t n_out = plcdd_write(fd, buf, n_bytes);
 

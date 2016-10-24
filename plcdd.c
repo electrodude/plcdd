@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		plcdd_display_flush(&display);
+		plcdd_display_update(&display);
 
 		struct timespec one_sec = {.tv_sec = 1, .tv_nsec = 0,};
 		nanosleep(&one_sec, &one_sec);

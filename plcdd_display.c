@@ -83,84 +83,103 @@ void plcdd_display_draw(struct plcdd_display *display, unsigned int y, unsigned 
 	memcpy(&display->next[y*display->cols + x], str, len);
 }
 
-void plcdd_display_flush(struct plcdd_display *display)
+static inline int plcdd_display_set_property(struct plcdd_display *display, char *curr, char next)
 {
-	size_t n = display->rows*display->cols;
-
-	if (display->status_curr != PLCDD_UNKNOWN)
+	if (next == PLCDD_UNKNOWN)
 	{
-		display->status_curr = PLCDD_STATUS_ON;
-
-		plcdd_write_char(display->fd, display->status_curr);
+		*curr = PLCDD_UNKNOWN;
+		return 3;
 	}
+	else if (next != *curr)
+	{
+		if (plcdd_write_char(display->fd, next) == 1)
+		{
+			*curr = next;
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		return 2;
+	}
+}
+
+int plcdd_display_update_backlight(struct plcdd_display *display)
+{
+	return plcdd_display_set_property(display, &display->backlight_curr, display->backlight_next);
+}
+
+int plcdd_display_update_status(struct plcdd_display *display)
+{
+	return plcdd_display_set_property(display, &display->status_curr, display->status_next);
+}
+
+void plcdd_display_update(struct plcdd_display *display)
+{
+	plcdd_display_set_property(display, &display->status_curr, PLCDD_STATUS_ON);
+
+	int dirty;
+
+	do
+	{
+		dirty = 0;
+
+		size_t n = display->rows*display->cols;
 
 #if 0
-	if (rand() < RAND_MAX / 4)
-	{
-		// mark a random stretch of characters as dirty
-		size_t j = rand() % n;
-		for (size_t i = 0; i < 8; i++)
+		if (rand() < RAND_MAX / 4)
 		{
-			if (display->next[(j + i) % n] != PLCDD_UNKNOWN)
+			// mark a random stretch of characters as dirty
+			size_t j = rand() % n;
+			for (size_t i = 0; i < 8; i++)
 			{
-				display->curr[(j + i) % n] = PLCDD_UNKNOWN;
+				if (display->next[(j + i) % n] != PLCDD_UNKNOWN)
+				{
+					display->curr[(j + i) % n] = PLCDD_UNKNOWN;
+				}
 			}
 		}
-	}
 #endif
-	for (size_t i = 0; i < n; i++)
-	{
-		if (display->next[i] == '\0')
+		for (size_t i = 0; i < n; i++)
 		{
-			display->curr[i] = '\0';
-		}
-	}
-
-	for (size_t i = 0; i < n; i++)
-	{
-		//printf("debug: i = %d\n", i);
-		if (display->next[i] != display->curr[i])
-		{
-			size_t j = i + 1;
-			while ((display->next[j] != display->curr[j] || (j+1 < n && display->next[j+1] != display->curr[j+1] && display->next[j+1] != '\0')) && j <= n)
+			if (display->next[i] == '\0')
 			{
-				//printf("debug: j = %d\n", j);
-				j++;
+				display->curr[i] = '\0';
 			}
-
-			//printf("debug: update [%d, %d)\n", i, j);
-
-			unsigned int len = j - i;
-
-			size_t len_out = plcdd_mvstr(display->fd, plcdd_pos_adjust(i, display->cols), len, &display->next[i]);
-
-			memcpy(&display->curr[i], &display->next[i], len_out);
-
-			i = j;
 		}
-	}
 
-	if (display->backlight_next == PLCDD_UNKNOWN)
-	{
-		display->backlight_curr = PLCDD_UNKNOWN;
-	}
+		for (size_t i = 0; i < n; i++)
+		{
+			//printf("debug: i = %d\n", i);
+			if (display->next[i] != display->curr[i])
+			{
+				size_t j = i + 1;
+				while ((display->next[j] != display->curr[j] || (j+1 < n && display->next[j+1] != display->curr[j+1] && display->next[j+1] != '\0')) && j <= n)
+				{
+					//printf("debug: j = %d\n", j);
+					j++;
+				}
 
-	if (display->backlight_next != display->backlight_curr)
-	{
-		plcdd_write_char(display->fd, display->backlight_next);
+				//printf("debug: update [%d, %d)\n", i, j);
 
-		display->backlight_curr = display->backlight_next;
-	}
+				unsigned int len = j - i;
 
-	if (display->status_next == PLCDD_UNKNOWN)
-	{
-		display->status_curr = PLCDD_UNKNOWN;
-	}
+				size_t len_out = plcdd_mvstr(display->fd, plcdd_pos_adjust(i, display->cols), len, &display->next[i]);
 
-	if (display->status_next != display->status_curr)
-	{
-		plcdd_write_char(display->fd, display->status_next);
+				if (len_out != len) dirty = 1;
 
-		display->status_curr = display->status_next;
-	}
+				memcpy(&display->curr[i], &display->next[i], len_out);
+
+				i = j;
+			}
+		}
+
+	} while (dirty);
+
+	plcdd_display_update_backlight(display);
+	plcdd_display_update_status(display);
 }

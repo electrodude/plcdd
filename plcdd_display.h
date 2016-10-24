@@ -37,6 +37,9 @@ void plcdd_display_clear(struct plcdd_display *display);
 
 void plcdd_display_draw(struct plcdd_display *display, unsigned int y, unsigned int x, unsigned int len, const char *str);
 
-void plcdd_display_flush(struct plcdd_display *display);
+int plcdd_display_update_backlight(struct plcdd_display *display);
+int plcdd_display_update_status(struct plcdd_display *display);
+
+void plcdd_display_update(struct plcdd_display *display);
 
 #endif
