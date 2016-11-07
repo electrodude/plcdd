@@ -65,20 +65,20 @@ void plcdd_display_draw(struct plcdd_display *display, unsigned int y, unsigned 
 {
 	if (y >= display->rows)
 	{
-		printf("warn : on nonexistant line %d\n", y);
+		fprintf(stderr, "warn : on nonexistant line %d\n", y);
 		return;
 	}
 
 	if (x >= display->cols)
 	{
-		printf("warn : on nonexistant col  %d\n", x);
+		fprintf(stderr, "warn : on nonexistant col  %d\n", x);
 		return;
 	}
 
 	if (x + len > display->cols)
 	{
 		len = display->cols - x;
-		printf("warn : truncated to %d chars\n", len);
+		fprintf(stderr, "warn : truncated to %d chars\n", len);
 	}
 
 	memcpy(&display->next[y*display->cols + x], str, len);
@@ -155,17 +155,17 @@ void plcdd_display_update(struct plcdd_display *display)
 
 		for (size_t i = 0; i < n; i++)
 		{
-			//printf("debug: i = %d\n", i);
+			//fprintf(stderr, "debug: i = %d\n", i);
 			if (display->next[i] != display->curr[i])
 			{
 				size_t j = i + 1;
 				while ((display->next[j] != display->curr[j] || (j+1 < n && display->next[j+1] != display->curr[j+1] && display->next[j+1] != '\0')) && j <= n)
 				{
-					//printf("debug: j = %d\n", j);
+					//fprintf(stderr, "debug: j = %d\n", j);
 					j++;
 				}
 
-				//printf("debug: update [%d, %d)\n", i, j);
+				//fprintf(stderr, "debug: update [%d, %d)\n", i, j);
 
 				unsigned int len = j - i;
 

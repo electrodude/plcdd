@@ -51,8 +51,21 @@ static const char *degree_ascii =
 
 int main(int argc, char **argv)
 {
+	const char *path = "/dev/ttyAMA0";
+	int baud = 9600;
+
+	if (argc >= 2)
+	{
+		path = argv[1];
+	}
+
+	if (argc >= 3)
+	{
+		baud = strtol(argv[2], NULL, 10);
+	}
+
 	struct plcdd_display display;
-	plcdd_display_open(&display, "/dev/ttyAMA0", 9600, 4, 20);
+	plcdd_display_open(&display, path, baud, 4, 20);
 	display.status_next = PLCDD_STATUS_ON;
 
 	char degree_def[8];
@@ -158,14 +171,21 @@ int main(int argc, char **argv)
 			{
 				if (cputemp != NULL)
 				{
+					//fprintf(stderr, "read cputemp\n");
 					rewind(cputemp);
 					fflush(cputemp);
 					int n = fscanf(cputemp, "%d", &temp1000);
 					if (n != 1)
 					{
-						fprintf(stderr, "warn : reading cpu temp: only found %d out of 1 fields\n", n);
+						fprintf(stderr, "warn : reading cputemp: only found %d out of 1 fields\n", n);
 					}
 				}
+
+				if (temp1000 > 50000)
+				{
+					backlight_timeout(30);
+				}
+
 				snprintf(window_temp.buf, window_temp.len + 1, "%d\x07             ", (temp1000 + 500) / 1000);
 				plcdd_window_draw(&window_temp);
 
