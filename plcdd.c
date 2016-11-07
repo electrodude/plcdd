@@ -1,7 +1,10 @@
 #define _POSIX_C_SOURCE 199309L
+#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
+#include <ctype.h>
 #include <time.h>
 
 #include "plcdd_display.h"
@@ -38,6 +41,61 @@ void backlight_timeout(int seconds)
 	{
 		backlight_timer = seconds;
 	}
+}
+
+void parse_meminfo(char *p, char *pe, double *memtotal, double *memactive)
+{
+	while (p != pe)
+	{
+		const char *key = p;
+		while (p != pe && *p != ':') p++;
+		const char *keye = p;
+		*p++ = '\0';
+
+		while (p != pe && isspace(*p)) p++;
+
+		double value = 0;
+		while (p != pe && isdigit(*p))
+		{
+			value = value*10 + (*p - '0');
+			p++;
+		}
+
+		while (p != pe && isspace(*p)) p++;
+
+		const char *unit = p;
+		while (p != pe && *p != '\n') p++;
+		const char *unite = p;
+		*p++ = '\0';
+
+		while (p != pe && !isalnum(*p)) p++;
+
+		switch (*unit)
+		{
+			case 'k': value *= 1000.0                    ; unit++; break;
+			case 'K': value *= 1024.0                    ; unit++; break;
+			case 'm': value *= 1000.0*1000               ; unit++; break;
+			case 'M': value *= 1024.0*1024               ; unit++; break;
+			case 'g': value *= 1000.0*1000*1000          ; unit++; break;
+			case 'G': value *= 1024.0*1024*1024          ; unit++; break;
+			case 't': value *= 1000.0*1000*1000*1000     ; unit++; break;
+			case 'T': value *= 1024.0*1024*1024*1024     ; unit++; break;
+			case 'p': value *= 1000.0*1000*1000*1000*1000; unit++; break;
+			case 'P': value *= 1024.0*1024*1024*1024*1024; unit++; break;
+		}
+
+		if (!strcmp(key, "MemTotal"))
+		{
+			*memtotal = value;
+			//fprintf(stderr, "%s: %g %s\n", key, value, unit);
+		}
+		if (!strcmp(key, "Active"))
+		{
+			*memactive = value;
+			//fprintf(stderr, "%s: %g %s\n", key, value, unit);
+		}
+	}
+	//fprintf(stderr, "\n");
 }
 
 static const char *degree_ascii =
@@ -77,6 +135,7 @@ int main(int argc, char **argv)
 
 	struct plcdd_window window_load;
 	plcdd_window_new(&window_load, &display, 3,  0, 14);
+	window_load.displen = 11;
 
 	struct plcdd_window window_processes;
 	plcdd_window_new(&window_processes, &display, 3,  5,  16);
@@ -87,9 +146,15 @@ int main(int argc, char **argv)
 
 	struct plcdd_window window_date;
 	plcdd_window_new(&window_date, &display, 3,  0,  11);
+	window_date.displen = 11;
+
+	struct plcdd_window window_mem;
+	plcdd_window_new(&window_mem, &display, 3,  0,  11);
+	window_mem.displen = 11;
 
 	struct plcdd_window window_users;
 	plcdd_window_new(&window_users, &display, 3,  0,  11);
+	window_users.displen = 11;
 
 	backlight_timeout(60);
 
@@ -105,6 +170,12 @@ int main(int argc, char **argv)
 	if (loadavg == NULL)
 	{
 		fprintf(stderr, "warn : failed to open /proc/loadavg");
+	}
+
+	int meminfo = open("/proc/meminfo", O_RDONLY);
+	if (meminfo < 0)
+	{
+		fprintf(stderr, "warn : failed to open /proc/meminfo");
 	}
 
 	FILE *cputemp = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
@@ -138,24 +209,31 @@ int main(int argc, char **argv)
 		size_t len = strftime(window_time.buf, window_time.len + 1, "%H:%M:%S", &tm);
 		plcdd_window_draw(&window_time);
 
+		int tm_sec = tm.tm_sec;
 
-		if (loadavg != NULL)
+		int mode = (t / 4) % 4;
+
+		if (mode == 1 || mode == 2)
 		{
-			rewind(loadavg);
-			fflush(loadavg);
-			int n = fscanf(loadavg, "%f %f %f %d/%d %d", &t1, &t5, &t15, &runnable, &total, &lastpid);
-			if (n != 6)
+			if (loadavg != NULL)
 			{
-				fprintf(stderr, "warn : reading /proc/loadavg: only found %d out of 6 fields\n", n);
-			}
+				//fprintf(stderr, "read loadavg\n");
+				rewind(loadavg);
+				fflush(loadavg);
+				int n = fscanf(loadavg, "%f %f %f %d/%d %d", &t1, &t5, &t15, &runnable, &total, &lastpid);
+				if (n != 6)
+				{
+					fprintf(stderr, "warn : reading loadavg: only found %d out of 6 fields\n", n);
+				}
 
-			if (t1 > 1.0f || t5 > 1.0f)
-			{
-				backlight_timeout(30);
+				if (t1 > 1.0f || t5 > 0.75f || t15 > 0.5f)
+				{
+					backlight_timeout(60);
+				}
 			}
 		}
 
-		switch ((t / 4) % 4)
+		switch (mode)
 		{
 			case 0:
 			{
@@ -201,6 +279,29 @@ int main(int argc, char **argv)
 				break;
 			}
 			case 3:
+			{
+				double memtotal = 0.0;
+				double memactive = 0.0;
+				if (meminfo >= 0)
+				{
+					//fprintf(stderr, "read meminfo\n");
+					lseek(meminfo, 0, SEEK_SET);
+
+#define BUFLEN 8192
+					char buf[BUFLEN];
+					ssize_t n = read(meminfo, &buf, BUFLEN);
+
+					char *p  =  buf;
+					char *pe = &buf[n];
+
+					parse_meminfo(p, pe, &memtotal, &memactive);
+#undef BUFLEN
+				}
+				snprintf(window_mem.buf, window_mem.len + 1, "%.1f/%.0fMB         ", memactive / (1024.0*1024), memtotal / (1024.0*1024));
+				plcdd_window_draw(&window_mem);
+				break;
+			}
+			case 4:
 			{
 				snprintf(window_users.buf, window_users.len + 1, "TODO users    ");
 				plcdd_window_draw(&window_users);
