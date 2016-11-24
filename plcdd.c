@@ -43,7 +43,7 @@ void backlight_timeout(int seconds)
 	}
 }
 
-void parse_meminfo(char *p, char *pe, double *memtotal, double *memactive)
+void parse_meminfo(char *p, const char *pe, double *memtotal, double *memactive)
 {
 	while (p != pe)
 	{
@@ -131,30 +131,25 @@ int main(int argc, char **argv)
 	plcdd_display_customchar_define(&display, 7, degree_def);
 
 	struct plcdd_window window_time;
-	plcdd_window_new(&window_time, &display, 3, 12,  8);
+	plcdd_window_new(&window_time, &display, 3, 12, 8, 8);
 
 	struct plcdd_window window_load;
-	plcdd_window_new(&window_load, &display, 3,  0, 14);
-	window_load.displen = 11;
+	plcdd_window_new(&window_load, &display, 3,  0, 11, 14);
 
 	struct plcdd_window window_processes;
-	plcdd_window_new(&window_processes, &display, 3,  5,  16);
-	window_processes.displen = 6;
+	plcdd_window_new(&window_processes, &display, 3, 5, 6, 16);
 
 	struct plcdd_window window_temp;
-	plcdd_window_new(&window_temp, &display, 3,  0,  4);
+	plcdd_window_new(&window_temp, &display, 3,  0, 4, 11);
 
 	struct plcdd_window window_date;
-	plcdd_window_new(&window_date, &display, 3,  0,  11);
-	window_date.displen = 11;
+	plcdd_window_new(&window_date, &display, 3,  0, 11, 11);
 
 	struct plcdd_window window_mem;
-	plcdd_window_new(&window_mem, &display, 3,  0,  11);
-	window_mem.displen = 11;
+	plcdd_window_new(&window_mem, &display, 3,  0, 11, 11);
 
 	struct plcdd_window window_users;
-	plcdd_window_new(&window_users, &display, 3,  0,  11);
-	window_users.displen = 11;
+	plcdd_window_new(&window_users, &display, 3,  0, 11, 11);
 
 	backlight_timeout(60);
 
@@ -188,7 +183,7 @@ int main(int argc, char **argv)
 	{
 
 #if 1
-		memset(&display.next[3*display.cols], ' ', display.cols);
+		plcdd_display_clear_line(&display, 3); // only clear last line
 #else
 		plcdd_display_clear(&display);
 #endif

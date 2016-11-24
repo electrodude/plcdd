@@ -27,6 +27,8 @@ struct plcdd_display
 	char status_curr;
 	char status_next;
 
+	char customchar_mask;
+
 	int fd;
 };
 
@@ -34,6 +36,7 @@ int plcdd_display_open(struct plcdd_display *display, const char *device, int ba
 void plcdd_display_close(struct plcdd_display *display);
 
 void plcdd_display_clear(struct plcdd_display *display);
+void plcdd_display_clear_line(struct plcdd_display *display, unsigned int line);
 
 void plcdd_display_draw(struct plcdd_display *display, unsigned int y, unsigned int x, unsigned int len, const char *str);
 
@@ -42,7 +45,12 @@ int plcdd_display_update_status(struct plcdd_display *display);
 
 void plcdd_display_update(struct plcdd_display *display);
 
-void plcdd_display_customchar_define(struct plcdd_display *display, unsigned int i, char def[8]);
+
+int plcdd_display_customchar_define(struct plcdd_display *display, int i, char def[8]);
+int plcdd_display_customchar_define_alloc(struct plcdd_display *display, char def[8]);
+int plcdd_display_customchar_alloc(struct plcdd_display *display);
+int plcdd_display_customchar_free(struct plcdd_display *display, int i);
+
 void plcdd_customchar_from_asciiart(char *def, const char *p);
 
 #endif

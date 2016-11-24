@@ -1,12 +1,18 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "plcdd_display.h"
 
 #include "plcdd_window.h"
 
-int plcdd_window_new(struct plcdd_window *window, struct plcdd_display *display, unsigned int y, unsigned int x, size_t len)
+int plcdd_window_new(struct plcdd_window *window, struct plcdd_display *display, unsigned int y, unsigned int x, unsigned int width, size_t len)
 {
+	if (width > len)
+	{
+		fprintf(stderr, "warn : plcdd_window_new(%p, %p, %u, %u, %u, %zu): width > len\n", window, display, y, x, width, len);
+	}
+
 	char *buf = malloc(len + 1);
 
 	if (buf == NULL)
@@ -20,9 +26,9 @@ int plcdd_window_new(struct plcdd_window *window, struct plcdd_display *display,
 
 	window->display = display;
 	window->dispoff = 0;
-	window->displen = len;
 	window->y = y;
 	window->x = x;
+	window->width = width;
 	window->len = len;
 	window->buf = buf;
 
@@ -47,5 +53,5 @@ void plcdd_window_dtor(struct plcdd_window *window)
 
 void plcdd_window_draw(struct plcdd_window *window)
 {
-	plcdd_display_draw(window->display, window->y, window->x, window->displen, &window->buf[window->dispoff]);
+	plcdd_display_draw(window->display, window->y, window->x, window->width, &window->buf[window->dispoff]);
 }
