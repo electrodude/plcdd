@@ -8,7 +8,7 @@ RANLIB=ranlib
 CFLAGS+=-g -O0
 #CFLAGS+=-O3
 
-SOURCES_LIB=plcdd_window.c plcdd_display.c plcdd_cmd.c
+SOURCES_LIB=plcdd_progress.c plcdd_window.c plcdd_display.c plcdd_cmd.c
 OBJECTS_LIB=$(patsubst %.c,%.o,${SOURCES_LIB})
 
 SOURCES_PLCDD=plcdd.c

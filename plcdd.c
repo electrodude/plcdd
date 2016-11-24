@@ -9,6 +9,7 @@
 
 #include "plcdd_display.h"
 #include "plcdd_window.h"
+#include "plcdd_progress.h"
 
 /*
   01234567890123456789  
@@ -129,6 +130,8 @@ int main(int argc, char **argv)
 	char degree_def[8];
 	plcdd_customchar_from_asciiart(degree_def, degree_ascii);
 	plcdd_display_customchar_define(&display, 7, degree_def);
+
+	plcdd_progress_init(&display);
 
 	struct plcdd_window window_time;
 	plcdd_window_new(&window_time, &display, 3, 12, 8, 8);
