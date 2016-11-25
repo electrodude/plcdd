@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <ctype.h>
 
 #include "plcdd_cmd.h"
+#include "plcdd_customchar.h"
 
 #include "plcdd_display.h"
 
@@ -24,7 +23,8 @@ int plcdd_display_open(struct plcdd_display *display, const char *device, int ba
 	display->rows = rows;
 	display->cols = cols;
 
-	display->customchar_mask = 0;
+	display->customchar_mask_curr = 0;
+	display->customchar_mask_next = 0;
 
 	size_t n = display->rows*display->cols;
 
@@ -64,9 +64,14 @@ void plcdd_display_clear(struct plcdd_display *display)
 	memset(display->next, ' ', n);
 }
 
+void plcdd_display_fill_region(struct plcdd_display *display, char c, unsigned int line, unsigned int x, unsigned int width)
+{
+	memset(&display->next[line*display->cols + x], c, width);
+}
+
 void plcdd_display_clear_line(struct plcdd_display *display, unsigned int line)
 {
-	memset(&display->next[line*display->cols], ' ', display->cols);
+	plcdd_display_fill_region(display, ' ', line, 0, display->cols);
 }
 
 void plcdd_display_draw(struct plcdd_display *display, unsigned int y, unsigned int x, unsigned int len, const char *str)
@@ -129,6 +134,9 @@ int plcdd_display_update_status(struct plcdd_display *display)
 
 void plcdd_display_update(struct plcdd_display *display)
 {
+	// update custom characters first, to avoid glitches
+	plcdd_customchar_update(display);
+
 	plcdd_display_set_property(display, &display->status_curr, PLCDD_STATUS_ON);
 
 	int dirty;
@@ -167,7 +175,7 @@ void plcdd_display_update(struct plcdd_display *display)
 			if (display->next[i] != display->curr[i])
 			{
 				size_t j = i + 1;
-				while ((display->next[j] != display->curr[j] || (j+1 < n && display->next[j+1] != display->curr[j+1] && display->next[j+1] != '\0')) && j <= n)
+				while (j < n && (display->next[j] != display->curr[j] || (j+1 < n && display->next[j+1] != display->curr[j+1] && display->next[j+1] != '\0')))
 				{
 					//fprintf(stderr, "debug: j = %d\n", j);
 					j++;
@@ -191,73 +199,4 @@ void plcdd_display_update(struct plcdd_display *display)
 
 	plcdd_display_update_backlight(display);
 	plcdd_display_update_status(display);
-}
-
-int plcdd_display_customchar_define(struct plcdd_display *display, int i, char def[8])
-{
-	if (i < 0 || i >= 8) return 1;
-
-	int rc = plcdd_customchar_define(display->fd, i, def);
-	if (rc) return rc;
-
-	display->customchar_mask |= 1 << i;
-
-	return 0;
-}
-
-int plcdd_display_customchar_define_alloc(struct plcdd_display *display, char def[8])
-{
-	int i = plcdd_display_customchar_alloc(display);
-	if (i < 0) return i;
-
-	if (plcdd_display_customchar_define(display, i, def))
-	{
-		return -1;
-	}
-
-	return i != 0 ? i : '\x0B';
-}
-
-int plcdd_display_customchar_alloc(struct plcdd_display *display)
-{
-	return ffs(~display->customchar_mask) - 1;
-}
-
-int plcdd_display_customchar_free(struct plcdd_display *display, int i)
-{
-	if (!(display->customchar_mask & (1 << i)))
-	{
-		return 1;
-	}
-
-	display->customchar_mask &= ~(1 << i);
-
-	return 0;
-}
-
-void plcdd_customchar_from_asciiart(char *def, const char *p)
-{
-	char *def_end = &def[8];
-	for (; *p && def != def_end; p++)
-	{
-		if (*p == '\n')
-		{
-			def++;
-			*def = 0;
-		}
-		else if (isspace(*p))
-		{
-			*def = (*def << 1) | 0;
-		}
-		else
-		{
-			*def = (*def << 1) | 1;
-		}
-	}
-
-	while (def != def_end)
-	{
-		def++;
-		*def = 0;
-	}
 }

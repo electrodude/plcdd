@@ -65,7 +65,7 @@ size_t plcdd_mvstr(int fd, unsigned char pos, unsigned int len, const char *str)
 	return n_out > 0 ? n_out - 1 : 0;
 }
 
-int plcdd_customchar_define(int fd, unsigned int i, char def[8])
+int plcdd_define_customchar(int fd, unsigned int i, const char def[8])
 {
 	char buf[9];
 

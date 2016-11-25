@@ -1,7 +1,9 @@
 #ifndef PLCDD_CMD_H
 #define PLCDD_CMD_H
 
-#include <stddef.h>
+// Low level stuff; these are not the functions you are looking for
+
+#include <sys/types.h>
 
 #define PLCDD_MAXCOLS 20
 
@@ -37,6 +39,6 @@ ssize_t plcdd_write_char(int fd, char c);
 
 size_t plcdd_mvstr(int fd, unsigned char pos, unsigned int len, const char *str);
 
-int plcdd_customchar_define(int fd, unsigned int i, char def[8]);
+int plcdd_define_customchar(int fd, unsigned int i, const char def[8]);
 
 #endif

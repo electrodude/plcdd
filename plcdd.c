@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "plcdd_display.h"
+#include "plcdd_customchar.h"
 #include "plcdd_window.h"
 #include "plcdd_progress.h"
 
@@ -108,6 +109,7 @@ static const char *degree_ascii =
 " ##  \n"
 "     \n"
 "     \n"
+"     \n"
 "     \n";
 
 int main(int argc, char **argv)
@@ -133,7 +135,7 @@ int main(int argc, char **argv)
 
 	char degree_def[8];
 	plcdd_customchar_from_asciiart(degree_def, degree_ascii);
-	plcdd_display_customchar_define(&display, 7, degree_def);
+	plcdd_customchar_define(&display, 7, degree_def);
 
 	plcdd_progress_init(&display);
 
