@@ -34,13 +34,15 @@
   01234567890123456789
 */
 
-int backlight_timer = 0;
+time_t backlight_end = 0;
 
 void backlight_timeout(int seconds)
 {
-	if (backlight_timer < seconds)
+	time_t now = time(NULL);
+
+	if (now + seconds > backlight_end)
 	{
-		backlight_timer = seconds;
+		backlight_end = now + seconds;
 	}
 }
 
@@ -123,6 +125,8 @@ int main(int argc, char **argv)
 		baud = strtol(argv[2], NULL, 10);
 	}
 
+	tzset();
+
 	struct plcdd_display display;
 	plcdd_display_open(&display, path, baud, 4, 20);
 	display.status_next = PLCDD_STATUS_ON;
@@ -162,8 +166,6 @@ int main(int argc, char **argv)
 
 	int temp1000;
 
-	tzset();
-
 	FILE *loadavg = fopen("/proc/loadavg", "r");
 	if (loadavg == NULL)
 	{
@@ -184,6 +186,17 @@ int main(int argc, char **argv)
 
 	while (1)
 	{
+		struct timespec now;
+		clock_gettime(CLOCK_REALTIME, &now);
+
+		time_t t = now.tv_sec;
+
+		struct tm tm;
+		localtime_r(&t, &tm);
+
+		int tm_sec = tm.tm_sec;
+
+		int mode = (t / 4) % 4;
 
 #if 1
 		plcdd_display_clear_line(&display, 3); // only clear last line
@@ -191,25 +204,18 @@ int main(int argc, char **argv)
 		plcdd_display_clear(&display);
 #endif
 
-		if (backlight_timer > 0)
+		if (t < backlight_end)
 		{
 			display.backlight_next = PLCDD_BACKLIGHT_ON;
-			backlight_timer--;
 		}
 		else
 		{
 			display.backlight_next = PLCDD_BACKLIGHT_OFF;
 		}
 
-		time_t t = time(NULL);
-		struct tm tm;
-		localtime_r(&t, &tm);
 		size_t len = strftime(window_time.buf, window_time.len + 1, "%H:%M:%S", &tm);
 		plcdd_window_draw(&window_time);
 
-		int tm_sec = tm.tm_sec;
-
-		int mode = (t / 4) % 4;
 
 		if (mode == 1 || mode == 2)
 		{
