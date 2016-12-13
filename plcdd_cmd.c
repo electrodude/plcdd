@@ -29,7 +29,7 @@ size_t plcdd_mvstr(int fd, unsigned char pos, unsigned int len, const char *str)
 
 	*p++ = pos;
 
-	for (size_t i = 0; i < len; i++)
+	for (unsigned int i = 0; i < len; i++)
 	{
 		unsigned char c = str[i];
 
@@ -38,7 +38,7 @@ size_t plcdd_mvstr(int fd, unsigned char pos, unsigned int len, const char *str)
 
 		if (!((c < 8) || (32 <= c && c < 127)))
 		{
-			fprintf(stderr, "warn : filtered bad char %02x, %d of %d, string at (%d, %d)\n", c, i, len, PLCDD_POS_TO_Y_X(pos));
+			fprintf(stderr, "warn : filtered bad char %02x, %u of %u, string at (%d, %d)\n", c, i, len, PLCDD_POS_TO_Y_X(pos));
 			c = '?';
 		}
 
@@ -58,7 +58,7 @@ size_t plcdd_mvstr(int fd, unsigned char pos, unsigned int len, const char *str)
 #if DEBUG
 	if (n_out != n_bytes)
 	{
-		fprintf(stderr, "debug: only wrote %zd out of %zd bytes\n", n_out, n_bytes);
+		fprintf(stderr, "debug: only wrote %zu out of %zu bytes\n", n_out, n_bytes);
 	}
 #endif
 

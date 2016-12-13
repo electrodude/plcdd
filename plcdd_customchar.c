@@ -25,7 +25,7 @@ int plcdd_customchar_update(struct plcdd_display *display)
 				}
 				else
 				{
-					fprintf(stderr, "failed to update customchar %u\n", i);
+					fprintf(stderr, "failed to update customchar %zu\n", i);
 				}
 			}
 		}
