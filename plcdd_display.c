@@ -1,8 +1,10 @@
+#define _DEFAULT_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <termios.h>
 
 #include "plcdd_cmd.h"
 #include "plcdd_customchar.h"
@@ -11,14 +13,21 @@
 
 int plcdd_display_open(struct plcdd_display *display, const char *device, int baud, size_t rows, size_t cols)
 {
-	display->fd = open(device, O_WRONLY);
+	display->fd = open(device, O_WRONLY | O_NOCTTY);
 
 	if (display->fd == -1)
 	{
 		return 1;
 	}
 
-	// TODO: set baud
+	if (baud >= 0)
+	{
+		struct termios tio;
+		tcgetattr(display->fd, &tio);
+		cfmakeraw(&tio);
+		cfsetspeed(&tio, baud);
+		tcsetattr(display->fd, TCSADRAIN, &tio);
+	}
 
 	display->rows = rows;
 	display->cols = cols;
