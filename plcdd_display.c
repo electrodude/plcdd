@@ -49,6 +49,9 @@ int plcdd_display_open(struct plcdd_display *display, const char *device, int ba
 	display->status_curr = PLCDD_UNKNOWN;
 	display->status_next = PLCDD_UNKNOWN;
 
+	memset(display->customchar_defs_curr, 0, sizeof(display->customchar_defs_curr));
+	memset(display->customchar_defs_next, 0, sizeof(display->customchar_defs_next));
+
 	return 0;
 }
 

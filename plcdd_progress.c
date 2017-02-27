@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <string.h>
 
 #include "plcdd_display.h"
@@ -123,8 +124,6 @@ static const char *plcdd_progress_def_on =
 "#####\n";
 
 static char plcdd_progress_char_off   = ' ';
-static char plcdd_progress_char_curr1 = '1';
-static char plcdd_progress_char_curr2 = '2';
 static char plcdd_progress_char_on    = '#';
 
 void plcdd_progress_init(struct plcdd_display *display)
@@ -141,19 +140,38 @@ void plcdd_progress_init(struct plcdd_display *display)
 	}
 }
 
-int plcdd_progress_new(struct plcdd_progress *progress, struct plcdd_display *display, unsigned int y, unsigned int x, unsigned int width, size_t len)
+struct plcdd_progress *plcdd_progress_new_at(struct plcdd_progress *progress, struct plcdd_display *display, unsigned int y, unsigned int x, unsigned int width, size_t len)
 {
-	plcdd_window_new(&progress->window, display, y, x, width, len);
+	plcdd_window_new_at(&progress->window, display, y, x, width, len);
 	progress->window.dispoff = 0;
+
+	progress->char1 = '1';
+	progress->char2 = '2';
 
 	progress->curr = 0;
 
 	memset(progress->window.buf, plcdd_progress_char_off, progress->window.len);
+
+	return progress;
 }
 
-int plcdd_progress_dtor(struct plcdd_progress *progress)
+void plcdd_progress_dtor(struct plcdd_progress *progress)
 {
 	plcdd_window_dtor(&progress->window);
+}
+
+struct plcdd_progress *plcdd_progress_new(struct plcdd_display *display, unsigned int y, unsigned int x, unsigned int width, size_t len)
+{
+	struct plcdd_progress *progress = malloc(sizeof(*progress));
+
+	return plcdd_progress_new_at(progress, display, y, x, width, len);
+}
+
+void plcdd_progress_free(struct plcdd_progress *progress)
+{
+	plcdd_progress_dtor(progress);
+
+	free(progress);
 }
 
 void plcdd_progress_draw(struct plcdd_progress *progress)
@@ -201,51 +219,51 @@ int plcdd_progress_set(struct plcdd_progress *progress, int new)
 		{
 			if (major == major_old + 1)
 			{
-				plcdd_customchar_free(progress->window.display, plcdd_progress_char_curr1);
-				plcdd_progress_char_curr1 = plcdd_progress_char_curr2;
-				plcdd_progress_char_curr2 = '2';
+				plcdd_customchar_free(progress->window.display, progress->char1);
+				progress->char1 = progress->char2;
+				progress->char2 = '2';
 			}
 			else if (major == major_old - 1)
 			{
-				plcdd_customchar_free(progress->window.display, plcdd_progress_char_curr2);
-				plcdd_progress_char_curr2 = plcdd_progress_char_curr1;
-				plcdd_progress_char_curr1 = '1';
+				plcdd_customchar_free(progress->window.display, progress->char2);
+				progress->char2 = progress->char1;
+				progress->char1 = '1';
 			}
 			else
 			{
-				plcdd_customchar_free(progress->window.display, plcdd_progress_char_curr1);
-				plcdd_progress_char_curr1 = '1';
-				plcdd_customchar_free(progress->window.display, plcdd_progress_char_curr2);
-				plcdd_progress_char_curr2 = '2';
+				plcdd_customchar_free(progress->window.display, progress->char1);
+				progress->char1 = '1';
+				plcdd_customchar_free(progress->window.display, progress->char2);
+				progress->char2 = '2';
 			}
 		}
 
 
 	if (major >= 1)
 	{
-		if (plcdd_progress_char_curr1 > '\x0B')
+		if (progress->char1 > '\x0B')
 		{
-			plcdd_progress_char_curr1 = plcdd_customchar_alloc2(progress->window.display);
+			progress->char1 = plcdd_customchar_alloc2(progress->window.display);
 		}
 
-		plcdd_customchar_define(progress->window.display, plcdd_progress_char_curr1, plcdd_progress_defs_bin[minor + 5]);
-		progress->window.buf[major - 1] = plcdd_progress_char_curr1;
+		plcdd_customchar_define(progress->window.display, progress->char1, plcdd_progress_defs_bin[minor + 5]);
+		progress->window.buf[major - 1] = progress->char1;
 	}
 	else
 	{
-		plcdd_customchar_free(progress->window.display, plcdd_progress_char_curr1);
-		plcdd_progress_char_curr1 = '1';
+		plcdd_customchar_free(progress->window.display, progress->char1);
+		progress->char1 = '1';
 	}
 
 	if (minor != 0 && major < progress->window.len)
 	{
-		if (plcdd_progress_char_curr2 > '\x0B')
+		if (progress->char2 > '\x0B')
 		{
-			plcdd_progress_char_curr2 = plcdd_customchar_alloc2(progress->window.display);
+			progress->char2 = plcdd_customchar_alloc2(progress->window.display);
 		}
 
-		plcdd_customchar_define(progress->window.display, plcdd_progress_char_curr2, plcdd_progress_defs_bin[minor - 1]);
-		progress->window.buf[major    ] = plcdd_progress_char_curr2;
+		plcdd_customchar_define(progress->window.display, progress->char2, plcdd_progress_defs_bin[minor - 1]);
+		progress->window.buf[major    ] = progress->char2;
 	}
 	else
 	{
@@ -254,8 +272,8 @@ int plcdd_progress_set(struct plcdd_progress *progress, int new)
 			progress->window.buf[major    ] = plcdd_progress_char_off;
 		}
 
-		plcdd_customchar_free(progress->window.display, plcdd_progress_char_curr2);
-		plcdd_progress_char_curr2 = '2';
+		plcdd_customchar_free(progress->window.display, progress->char2);
+		progress->char2 = '2';
 	}
 
 	progress->curr = new;

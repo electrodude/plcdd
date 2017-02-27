@@ -1,12 +1,12 @@
 CFLAGS+=-std=c99 -Wextra
-LDFLAGS+=
+LDFLAGS+=-lm
 CC=gcc
 LD=gcc
 AR=ar rcu
 RANLIB=ranlib
 
-CFLAGS+=-g -O0
-#CFLAGS+=-O3
+#CFLAGS+=-g -O0
+CFLAGS+=-O3
 
 SOURCES_LIB=plcdd_progress.c plcdd_window.c plcdd_customchar.c plcdd_display.c plcdd_cmd.c
 OBJECTS_LIB=$(patsubst %.c,%.o,${SOURCES_LIB})

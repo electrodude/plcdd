@@ -140,25 +140,25 @@ int main(int argc, char **argv)
 	plcdd_progress_init(&display);
 
 	struct plcdd_window window_time;
-	plcdd_window_new(&window_time, &display, 3, 12, 8, 8);
+	plcdd_window_new_at(&window_time, &display, 3, 12, 8, 8);
 
 	struct plcdd_window window_load;
-	plcdd_window_new(&window_load, &display, 3,  0, 11, 14);
+	plcdd_window_new_at(&window_load, &display, 3,  0, 11, 14);
 
 	struct plcdd_window window_processes;
-	plcdd_window_new(&window_processes, &display, 3, 5, 6, 16);
+	plcdd_window_new_at(&window_processes, &display, 3, 5, 6, 16);
 
 	struct plcdd_window window_temp;
-	plcdd_window_new(&window_temp, &display, 3,  0, 4, 11);
+	plcdd_window_new_at(&window_temp, &display, 3,  0, 4, 11);
 
 	struct plcdd_window window_date;
-	plcdd_window_new(&window_date, &display, 3,  0, 11, 11);
+	plcdd_window_new_at(&window_date, &display, 3,  0, 11, 11);
 
 	struct plcdd_window window_mem;
-	plcdd_window_new(&window_mem, &display, 3,  0, 11, 11);
+	plcdd_window_new_at(&window_mem, &display, 3,  0, 11, 11);
 
 	struct plcdd_window window_users;
-	plcdd_window_new(&window_users, &display, 3,  0, 11, 11);
+	plcdd_window_new_at(&window_users, &display, 3,  0, 11, 11);
 
 	backlight_timeout(60);
 
@@ -325,4 +325,6 @@ int main(int argc, char **argv)
 	fclose(loadavg);
 
 	plcdd_display_close(&display);
+
+	return 0;
 }
