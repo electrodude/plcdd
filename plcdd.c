@@ -321,7 +321,10 @@ int main(int argc, char **argv)
 		nanosleep(&one_sec, &one_sec);
 	}
 
+	close(meminfo);
 	fclose(cputemp);
+
+	fclose(printer_state);
 	fclose(loadavg);
 
 	plcdd_display_close(&display);
